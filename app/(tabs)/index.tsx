@@ -1,78 +1,193 @@
-import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  ActivityIndicator,
+  ScrollView,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { languages } from '../../constants/language-selection';
-const STORAGE_KEY = 'selectedLanguage';
+import { useLanguageStore } from '../../store/languageStore';
 
 export default function LearnScreen() {
-  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
+  const {
+    selectedLanguage,
+    setSelectedLanguage,
+    initializeLanguage,
+    isLanguageSelected,
+  } = useLanguageStore();
+  const [loading, setLoading] = useState(false);
+  const [wordData, setWordData] = useState({
+    Word: '',
+    Translation: '',
+    Pronunciation: '',
+    'Example Sentence': '',
+  });
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    loadSavedLanguage();
+    initializeLanguage();
   }, []);
-
-  const loadSavedLanguage = async () => {
-    try {
-      const savedLanguage = await AsyncStorage.getItem(STORAGE_KEY);
-      if (savedLanguage !== null) {
-        setSelectedLanguage(savedLanguage);
-      }
-    } catch (error) {
-      console.error('Error loading saved language:', error);
-    }
-  };
 
   const handleLanguageSelect = async (languageCode: string) => {
     try {
-      await AsyncStorage.setItem(STORAGE_KEY, languageCode);
-      setSelectedLanguage(languageCode);
+      await setSelectedLanguage(languageCode);
+      setWordData({
+        Word: '',
+        Translation: '',
+        Pronunciation: '',
+        'Example Sentence': '',
+      }); // Reset any previous word data
     } catch (error) {
       console.error('Error saving language:', error);
+      setError('Failed to save language selection');
     }
   };
-  console.log('selectedLanguage', selectedLanguage);
+
+  const fetchWordFromGemini = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const selectedLangData = languages.find(
+        (lang) => lang.code === selectedLanguage
+      );
+      if (!selectedLangData) {
+        throw new Error('Language not found');
+      }
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_GEMINI_API_ENDPOINT}?key=${process.env.EXPO_PUBLIC_GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: selectedLangData.aiPrompt,
+                  },
+                ],
+              },
+            ],
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('API request failed');
+      }
+
+      const data = await response.json();
+      // Extract the generated content from Gemini's response structure
+      const generatedContent = data.candidates[0].content.parts[0].text;
+      const cleanJson = generatedContent.replace(/```json\n|\n```/g, '');
+      try {
+        const parsedData = JSON.parse(cleanJson);
+        setWordData(parsedData);
+      } catch (error) {
+        console.error('Error parsing JSON:', error);
+        setError('Failed to parse learning content');
+      }
+    } catch (error) {
+      console.error('Error fetching from Gemini:', error);
+      setError('Failed to fetch learning content');
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    selectedLanguage && fetchWordFromGemini();
+  }, [selectedLanguage]);
+  console.log('wordData', wordData);
+  console.log('isLanguageSelected', isLanguageSelected);
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Choose Your Language</Text>
-        <Text style={styles.subtitle}>Select a language to start learning</Text>
+      <ScrollView>
+        {!selectedLanguage && (
+          <View>
+            <Text style={styles.title}>Choose Your Language</Text>
+            <Text style={styles.subtitle}>
+              Select a language to start learning
+            </Text>
 
-        <View style={styles.grid}>
-          {languages.map((language) => (
-            <TouchableOpacity
-              key={language.code}
-              style={[
-                styles.card,
-                selectedLanguage === language.code && styles.selectedCard,
-              ]}
-              onPress={() => handleLanguageSelect(language.code)}
-            >
-              <Image
-                source={{ uri: language.image }}
-                style={styles.cardImage}
-              />
-              <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.8)']}
-                style={styles.gradient}
-              >
-                <Text style={styles.cardText}>{language.name}</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          ))}
-        </View>
+            <View style={styles.grid}>
+              {languages.map((language) => (
+                <TouchableOpacity
+                  key={language.code}
+                  style={[
+                    styles.card,
+                    selectedLanguage === language.code && styles.selectedCard,
+                  ]}
+                  onPress={() => handleLanguageSelect(language.code)}
+                >
+                  <Image
+                    source={{ uri: language.image }}
+                    style={styles.cardImage}
+                    resizeMode="cover"
+                  />
+                  <LinearGradient
+                    colors={['transparent', 'rgba(0,0,0,0.8)']}
+                    style={styles.gradient}
+                  >
+                    <Text style={styles.cardText}>{language.name}</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
 
         <TouchableOpacity
           style={[
             styles.startButton,
-            !selectedLanguage && styles.startButtonDisabled,
+            (!selectedLanguage || loading) && styles.startButtonDisabled,
           ]}
-          disabled={!selectedLanguage}
+          onPress={fetchWordFromGemini}
+          disabled={!selectedLanguage || loading}
         >
-          <Text style={styles.startButtonText}>Start Learning</Text>
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.startButtonText}>
+              {wordData?.Word ? 'Get Next Word' : 'Start Learning'}
+            </Text>
+          )}
         </TouchableOpacity>
-      </View>
+
+        {error && <Text style={styles.errorText}>{error}</Text>}
+
+        {isLanguageSelected && (
+          <View style={styles.titleContainer}>
+            <Text style={styles.wordText}>
+              {selectedLanguage &&
+                'Your learning language is: ' + selectedLanguage}
+            </Text>
+          </View>
+        )}
+
+        {wordData && isLanguageSelected && (
+          <View style={styles.wordContainer}>
+            <Text style={styles.wordText}>Word: {wordData.Word}</Text>
+            <Text style={styles.wordText}>
+              Translation: {wordData.Translation}
+            </Text>
+            <Text style={styles.wordText}>
+              Pronunciation: {wordData.Pronunciation}
+            </Text>
+            <Text style={styles.wordText}>
+              Example: {wordData['Example Sentence']}
+            </Text>
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -89,6 +204,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 8,
+  },
+  titleContainer: {
+    marginTop: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    backgroundColor: '#2a2a2a',
+    borderRadius: 12,
+    color: '#fff',
   },
   subtitle: {
     fontSize: 16,
@@ -144,5 +268,21 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  errorText: {
+    color: '#ef4444',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  wordContainer: {
+    backgroundColor: '#2a2a2a',
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 24,
+  },
+  wordText: {
+    color: '#fff',
+    fontSize: 16,
+    lineHeight: 24,
   },
 });

@@ -1,6 +1,15 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, Switch, TouchableOpacity } from 'react-native';
+import { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Switch,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useLanguageStore } from '../../store/languageStore';
+import { languages } from '../../constants/language-selection';
 
 export default function SettingsScreen() {
   const [notifications, setNotifications] = useState(true);
@@ -9,10 +18,50 @@ export default function SettingsScreen() {
   const [afternoonTime, setAfternoonTime] = useState(true);
   const [eveningTime, setEveningTime] = useState(true);
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Notification Settings</Text>
+  const { selectedLanguage, setSelectedLanguage } = useLanguageStore();
 
+  const handleLanguageSelect = (languageCode: string) => {
+    setSelectedLanguage(languageCode);
+  };
+
+  return (
+    <ScrollView style={styles.container}>
+      <Text style={styles.title}>Settings</Text>
+
+      {/* Language Selection Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Learning Language</Text>
+        <View style={styles.languageGrid}>
+          {languages.map((language) => (
+            <TouchableOpacity
+              key={language.code}
+              style={[
+                styles.languageButton,
+                selectedLanguage === language.code &&
+                  styles.languageButtonActive,
+              ]}
+              onPress={() => handleLanguageSelect(language.code)}
+            >
+              <View style={styles.languageContent}>
+                <Text
+                  style={[
+                    styles.languageText,
+                    selectedLanguage === language.code &&
+                      styles.languageTextActive,
+                  ]}
+                >
+                  {language.name}
+                </Text>
+                {selectedLanguage === language.code && (
+                  <Ionicons name="checkmark-circle" size={20} color="#fff" />
+                )}
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* Existing Notification Settings */}
       <View style={styles.section}>
         <View style={styles.settingRow}>
           <Text style={styles.settingText}>Enable Notifications</Text>
@@ -111,7 +160,7 @@ export default function SettingsScreen() {
           />
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -187,6 +236,34 @@ const styles = StyleSheet.create({
   },
   timeText: {
     fontSize: 16,
+    color: '#fff',
+  },
+  // New styles for language selection
+  languageGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  languageButton: {
+    backgroundColor: '#2a2a2a',
+    padding: 12,
+    borderRadius: 8,
+    width: '48%',
+  },
+  languageButtonActive: {
+    backgroundColor: '#60a5fa',
+  },
+  languageContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  languageText: {
+    fontSize: 16,
+    color: '#666',
+    fontWeight: 'bold',
+  },
+  languageTextActive: {
     color: '#fff',
   },
 });
