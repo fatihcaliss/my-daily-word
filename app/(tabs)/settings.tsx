@@ -6,11 +6,13 @@ import {
   Switch,
   TouchableOpacity,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguageStore } from '../../store/languageStore';
 import { useVocabularyStore } from '../../store/vocabularyStore';
 import { languages } from '../../constants/language-selection';
+import * as Notifications from 'expo-notifications';
 
 type VocabularyLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert';
 
@@ -21,7 +23,7 @@ type Level = {
 };
 
 export default function SettingsScreen() {
-  const [notifications, setNotifications] = useState(true);
+  const [notifications, setNotifications] = useState(false);
   const [frequency, setFrequency] = useState(3);
   const [morningTime, setMorningTime] = useState(true);
   const [afternoonTime, setAfternoonTime] = useState(true);
@@ -29,6 +31,31 @@ export default function SettingsScreen() {
 
   const { selectedLanguage, setSelectedLanguage } = useLanguageStore();
   const { selectedLevel, setSelectedLevel } = useVocabularyStore();
+
+  useEffect(() => {
+    checkNotificationPermission();
+  }, []);
+
+  const checkNotificationPermission = async () => {
+    const { status: existingStatus } =
+      await Notifications.getPermissionsAsync();
+    setNotifications(existingStatus === 'granted');
+  };
+
+  const handleNotificationToggle = async (value: boolean) => {
+    if (value) {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Please enable notifications in your device settings to receive daily word reminders.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+    }
+    setNotifications(value);
+  };
 
   const handleLanguageSelect = (languageCode: string) => {
     setSelectedLanguage(languageCode);
@@ -122,14 +149,14 @@ export default function SettingsScreen() {
           <Text style={styles.settingText}>Enable Notifications</Text>
           <Switch
             value={notifications}
-            onValueChange={setNotifications}
+            onValueChange={handleNotificationToggle}
             trackColor={{ false: '#333', true: '#60a5fa' }}
             thumbColor={notifications ? '#fff' : '#f4f3f4'}
           />
         </View>
       </View>
 
-      <View style={styles.section}>
+      {/* <View style={styles.section}>
         <Text style={styles.sectionTitle}>Daily Word Frequency</Text>
         <View style={styles.frequencyButtons}>
           {[1, 3, 5, 7].map((num) => (
@@ -152,7 +179,7 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           ))}
         </View>
-      </View>
+      </View> */}
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Notification Times</Text>

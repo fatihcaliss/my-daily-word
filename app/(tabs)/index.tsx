@@ -36,7 +36,7 @@ export default function LearnScreen() {
   useEffect(() => {
     initializeLanguage();
   }, []);
-  console.log('selectedLevel', selectedLevel);
+
   const handleLanguageSelect = async (languageCode: string) => {
     try {
       await setSelectedLanguage(languageCode);
@@ -133,6 +133,20 @@ export default function LearnScreen() {
     }
   }, [selectedLanguage]);
 
+  const language =
+    selectedLanguage === 'en'
+      ? 'English'
+      : selectedLanguage === 'es'
+      ? 'Spanish'
+      : selectedLanguage === 'fr'
+      ? 'French'
+      : selectedLanguage === 'de'
+      ? 'German'
+      : selectedLanguage === 'it'
+      ? 'Italian'
+      : selectedLanguage === 'tr'
+      ? 'Turkish'
+      : '';
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
@@ -170,31 +184,15 @@ export default function LearnScreen() {
           </View>
         )}
 
-        <TouchableOpacity
-          style={[
-            styles.startButton,
-            (!selectedLanguage || loading) && styles.startButtonDisabled,
-          ]}
-          onPress={fetchWordFromGemini}
-          disabled={!selectedLanguage || loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.startButtonText}>
-              {wordData?.Word ? 'Get Next Word' : 'Start Learning'}
-            </Text>
-          )}
-        </TouchableOpacity>
-
         {error && <Text style={styles.errorText}>{error}</Text>}
 
         {isLanguageSelected && (
-          <View style={styles.titleContainer}>
-            <Text style={styles.wordText}>
-              Your learning language is: {selectedLanguage?.toUpperCase()}
-            </Text>
-          </View>
+          <LinearGradient
+            colors={['#34d399', '#10b981']}
+            style={styles.titleContainer}
+          >
+            <Text style={styles.titleText}>You are learning {language} 🥳</Text>
+          </LinearGradient>
         )}
 
         {wordData && isLanguageSelected && (
@@ -214,6 +212,22 @@ export default function LearnScreen() {
             </Text>
           </View>
         )}
+        <TouchableOpacity
+          style={[
+            styles.startButton,
+            (!selectedLanguage || loading) && styles.startButtonDisabled,
+          ]}
+          onPress={fetchWordFromGemini}
+          disabled={!selectedLanguage || loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.startButtonText}>
+              {wordData?.Word ? 'Get Next Word' : 'Start Learning'}
+            </Text>
+          )}
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -233,12 +247,15 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   titleContainer: {
+    padding: 12,
+    borderRadius: 12,
     marginTop: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
-    backgroundColor: '#2a2a2a',
-    borderRadius: 12,
+  },
+  titleText: {
+    fontSize: 20,
+    fontWeight: 'bold',
     color: '#fff',
   },
   subtitle: {
