@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { languages } from '../../constants/language-selection';
 import { useLanguageStore } from '../../store/languageStore';
 import { useWordHistoryStore } from '../../store/wordHistoryStore';
+import { useVocabularyStore } from '@/store/vocabularyStore';
 
 export default function LearnScreen() {
   const {
@@ -22,6 +23,7 @@ export default function LearnScreen() {
     isLanguageSelected,
   } = useLanguageStore();
   const { addWord, recentWords, loadWords } = useWordHistoryStore();
+  const { selectedLevel } = useVocabularyStore();
   const [loading, setLoading] = useState(false);
   const [wordData, setWordData] = useState({
     Word: '',
@@ -34,7 +36,7 @@ export default function LearnScreen() {
   useEffect(() => {
     initializeLanguage();
   }, []);
-
+  console.log('selectedLevel', selectedLevel);
   const handleLanguageSelect = async (languageCode: string) => {
     try {
       await setSelectedLanguage(languageCode);
@@ -77,6 +79,7 @@ export default function LearnScreen() {
                     text:
                       selectedLangData.aiPrompt +
                       ' ' +
+                      `You must choose a word that is at the ${selectedLevel} level of difficulty` +
                       `Choose a word different from ${recentWords?.[
                         selectedLanguage
                       ]
@@ -130,7 +133,6 @@ export default function LearnScreen() {
     }
   }, [selectedLanguage]);
 
-  console.log('recentWords', recentWords);
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>

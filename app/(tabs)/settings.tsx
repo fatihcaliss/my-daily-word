@@ -9,7 +9,16 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguageStore } from '../../store/languageStore';
+import { useVocabularyStore } from '../../store/vocabularyStore';
 import { languages } from '../../constants/language-selection';
+
+type VocabularyLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert';
+
+type Level = {
+  id: VocabularyLevel;
+  name: string;
+  icon: keyof typeof Ionicons.glyphMap;
+};
 
 export default function SettingsScreen() {
   const [notifications, setNotifications] = useState(true);
@@ -19,10 +28,18 @@ export default function SettingsScreen() {
   const [eveningTime, setEveningTime] = useState(true);
 
   const { selectedLanguage, setSelectedLanguage } = useLanguageStore();
+  const { selectedLevel, setSelectedLevel } = useVocabularyStore();
 
   const handleLanguageSelect = (languageCode: string) => {
     setSelectedLanguage(languageCode);
   };
+
+  const levels: Level[] = [
+    { id: 'beginner', name: 'Beginner', icon: 'school-outline' },
+    { id: 'intermediate', name: 'Intermediate', icon: 'book-outline' },
+    { id: 'advanced', name: 'Advanced', icon: 'ribbon-outline' },
+    { id: 'expert', name: 'Expert', icon: 'trophy-outline' },
+  ];
 
   return (
     <ScrollView style={styles.container}>
@@ -53,6 +70,44 @@ export default function SettingsScreen() {
                   {language.name}
                 </Text>
                 {selectedLanguage === language.code && (
+                  <Ionicons name="checkmark-circle" size={20} color="#fff" />
+                )}
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* Vocabulary Level Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Vocabulary Level</Text>
+        <View style={styles.levelGrid}>
+          {levels.map((level) => (
+            <TouchableOpacity
+              key={level.id}
+              style={[
+                styles.levelButton,
+                selectedLevel === level.id && styles.levelButtonActive,
+              ]}
+              onPress={() => setSelectedLevel(level.id)}
+            >
+              <View style={styles.levelContent}>
+                <View style={styles.levelInfo}>
+                  <Ionicons
+                    name={level.icon}
+                    size={20}
+                    color={selectedLevel === level.id ? '#fff' : '#666'}
+                  />
+                  <Text
+                    style={[
+                      styles.levelText,
+                      selectedLevel === level.id && styles.levelTextActive,
+                    ]}
+                  >
+                    {level.name}
+                  </Text>
+                </View>
+                {selectedLevel === level.id && (
                   <Ionicons name="checkmark-circle" size={20} color="#fff" />
                 )}
               </View>
@@ -264,6 +319,38 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   languageTextActive: {
+    color: '#fff',
+  },
+  // New styles for vocabulary level selection
+  levelGrid: {
+    flexDirection: 'column',
+    gap: 8,
+  },
+  levelButton: {
+    backgroundColor: '#2a2a2a',
+    padding: 16,
+    borderRadius: 8,
+    width: '100%',
+  },
+  levelButtonActive: {
+    backgroundColor: '#60a5fa',
+  },
+  levelContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  levelInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  levelText: {
+    fontSize: 16,
+    color: '#666',
+    fontWeight: 'bold',
+  },
+  levelTextActive: {
     color: '#fff',
   },
 });
