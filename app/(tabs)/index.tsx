@@ -12,6 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { languages } from '../../constants/language-selection';
 import { useLanguageStore } from '../../store/languageStore';
+import { useWordHistoryStore } from '../../store/wordHistoryStore';
 
 export default function LearnScreen() {
   const {
@@ -20,6 +21,7 @@ export default function LearnScreen() {
     initializeLanguage,
     isLanguageSelected,
   } = useLanguageStore();
+  const { addWord, recentWords, loadWords } = useWordHistoryStore();
   const [loading, setLoading] = useState(false);
   const [wordData, setWordData] = useState({
     Word: '',
@@ -72,7 +74,14 @@ export default function LearnScreen() {
               {
                 parts: [
                   {
-                    text: selectedLangData.aiPrompt,
+                    text:
+                      selectedLangData.aiPrompt +
+                      ' ' +
+                      `Choose a word different from ${recentWords?.[
+                        selectedLanguage
+                      ]
+                        ?.map((word) => word.word)
+                        .join(', ')}`,
                   },
                 ],
               },
@@ -92,6 +101,14 @@ export default function LearnScreen() {
       try {
         const parsedData = JSON.parse(cleanJson);
         setWordData(parsedData);
+        // Save the word to history
+        await addWord(selectedLanguage, {
+          word: parsedData.Word,
+          translation: parsedData.Translation,
+          pronunciation: parsedData.Pronunciation,
+          exampleSentence: parsedData['Example Sentence'],
+          timestamp: Date.now(),
+        });
       } catch (error) {
         console.error('Error parsing JSON:', error);
         setError('Failed to parse learning content');
@@ -106,8 +123,14 @@ export default function LearnScreen() {
   useEffect(() => {
     selectedLanguage && fetchWordFromGemini();
   }, [selectedLanguage]);
-  console.log('wordData', wordData);
-  console.log('isLanguageSelected', isLanguageSelected);
+
+  useEffect(() => {
+    if (selectedLanguage) {
+      loadWords(selectedLanguage);
+    }
+  }, [selectedLanguage]);
+
+  console.log('recentWords', recentWords);
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
@@ -167,8 +190,7 @@ export default function LearnScreen() {
         {isLanguageSelected && (
           <View style={styles.titleContainer}>
             <Text style={styles.wordText}>
-              {selectedLanguage &&
-                'Your learning language is: ' + selectedLanguage}
+              Your learning language is: {selectedLanguage?.toUpperCase()}
             </Text>
           </View>
         )}
@@ -180,7 +202,10 @@ export default function LearnScreen() {
               Translation: {wordData.Translation}
             </Text>
             <Text style={styles.wordText}>
-              Pronunciation: {wordData.Pronunciation}
+              Pronunciation:
+              <Text style={styles.pronunciation}>
+                {' ' + wordData.Pronunciation}
+              </Text>
             </Text>
             <Text style={styles.wordText}>
               Example: {wordData['Example Sentence']}
@@ -284,5 +309,10 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     lineHeight: 24,
+  },
+  pronunciation: {
+    fontSize: 16,
+    color: '#60a5fa',
+    fontStyle: 'italic',
   },
 });
