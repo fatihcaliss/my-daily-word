@@ -147,6 +147,8 @@ export default function LearnScreen() {
       : selectedLanguage === 'tr'
       ? 'Turkish'
       : '';
+
+  console.log('recentWords', recentWords);
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>

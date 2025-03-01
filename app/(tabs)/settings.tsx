@@ -13,6 +13,7 @@ import { useLanguageStore } from '../../store/languageStore';
 import { useVocabularyStore } from '../../store/vocabularyStore';
 import { languages } from '../../constants/language-selection';
 import * as Notifications from 'expo-notifications';
+import { useWordHistoryStore } from '@/store/wordHistoryStore';
 
 type VocabularyLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert';
 
@@ -31,7 +32,7 @@ export default function SettingsScreen() {
 
   const { selectedLanguage, setSelectedLanguage } = useLanguageStore();
   const { selectedLevel, setSelectedLevel } = useVocabularyStore();
-
+  const { clearHistory } = useWordHistoryStore();
   useEffect(() => {
     checkNotificationPermission();
   }, []);
@@ -67,6 +68,21 @@ export default function SettingsScreen() {
     { id: 'advanced', name: 'Advanced', icon: 'ribbon-outline' },
     { id: 'expert', name: 'Expert', icon: 'trophy-outline' },
   ];
+
+  const language =
+    selectedLanguage === 'en'
+      ? 'English'
+      : selectedLanguage === 'es'
+      ? 'Spanish'
+      : selectedLanguage === 'fr'
+      ? 'French'
+      : selectedLanguage === 'de'
+      ? 'German'
+      : selectedLanguage === 'it'
+      ? 'Italian'
+      : selectedLanguage === 'tr'
+      ? 'Turkish'
+      : '';
 
   return (
     <ScrollView style={styles.container}>
@@ -242,6 +258,15 @@ export default function SettingsScreen() {
           />
         </TouchableOpacity>
       </View>
+      {/* Clear Recent Words From Storage */}
+      <TouchableOpacity
+        style={styles.clearButton}
+        onPress={() => clearHistory(selectedLanguage)}
+      >
+        <Text style={styles.clearButtonText}>
+          Clear Recent Words for {language}
+        </Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -379,5 +404,16 @@ const styles = StyleSheet.create({
   },
   levelTextActive: {
     color: '#fff',
+  },
+  clearButton: {
+    backgroundColor: '#f74b8a',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 32,
+  },
+  clearButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
