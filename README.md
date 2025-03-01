@@ -69,9 +69,7 @@ GEMINI_API_KEY=your_api_key_here
 4. Start the development server
 
 ```bash
-npm run dev
-# or
-yarn dev
+npx expo start
 ```
 
 5. Open the app on your device using the Expo Go app or run it in an emulator
