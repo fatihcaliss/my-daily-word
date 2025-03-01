@@ -197,20 +197,33 @@ export default function LearnScreen() {
           </LinearGradient>
         )}
 
+        {/* {wordData && isLanguageSelected && (
+          <LinearGradient
+            colors={['#34d399', '#10b981']}
+            style={styles.titleContainer}
+          >
+            <Text style={styles.titleText}>{wordData.Word}</Text>
+          </LinearGradient>
+        )} */}
+
         {wordData && isLanguageSelected && (
           <View style={styles.wordContainer}>
-            <Text style={styles.wordText}>Word: {wordData.Word}</Text>
             <Text style={styles.wordText}>
-              Translation: {wordData.Translation}
+              <Text style={styles.wordBold}>Word:</Text> {wordData.Word}
             </Text>
             <Text style={styles.wordText}>
-              Pronunciation:
+              <Text style={styles.wordBold}>Translation:</Text>{' '}
+              {wordData.Translation}
+            </Text>
+            <Text style={styles.wordText}>
+              <Text style={styles.wordBold}>Pronunciation:</Text>{' '}
               <Text style={styles.pronunciation}>
                 {' ' + wordData.Pronunciation}
               </Text>
             </Text>
             <Text style={styles.wordText}>
-              Example: {wordData['Example Sentence']}
+              <Text style={styles.wordBold}>Example:</Text>{' '}
+              {wordData['Example Sentence']}
             </Text>
           </View>
         )}
@@ -330,6 +343,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     lineHeight: 24,
+  },
+  wordBold: {
+    fontWeight: 'bold',
   },
   pronunciation: {
     fontSize: 16,

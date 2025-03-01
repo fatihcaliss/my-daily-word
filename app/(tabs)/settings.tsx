@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,12 @@ import { useVocabularyStore } from '../../store/vocabularyStore';
 import { languages } from '../../constants/language-selection';
 import * as Notifications from 'expo-notifications';
 import { useWordHistoryStore } from '@/store/wordHistoryStore';
+import { useNotificationStore } from '@/store/notificationStore';
+import {
+  setupNotifications,
+  scheduleNotifications,
+  sendTestNotification,
+} from '@/services/notificationService';
 
 type VocabularyLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert';
 
@@ -24,18 +30,40 @@ type Level = {
 };
 
 export default function SettingsScreen() {
-  const [notifications, setNotifications] = useState(false);
-  const [frequency, setFrequency] = useState(3);
-  const [morningTime, setMorningTime] = useState(true);
-  const [afternoonTime, setAfternoonTime] = useState(true);
-  const [eveningTime, setEveningTime] = useState(true);
-
   const { selectedLanguage, setSelectedLanguage } = useLanguageStore();
   const { selectedLevel, setSelectedLevel } = useVocabularyStore();
   const { clearHistory } = useWordHistoryStore();
+
+  const {
+    settings: {
+      enabled: notifications,
+      morningTime,
+      afternoonTime,
+      eveningTime,
+      frequency,
+    },
+    setEnabled: setNotifications,
+    setMorningTime,
+    setAfternoonTime,
+    setEveningTime,
+    setFrequency,
+  } = useNotificationStore();
+
   useEffect(() => {
     checkNotificationPermission();
   }, []);
+
+  useEffect(() => {
+    // Schedule notifications whenever settings change
+    scheduleNotifications();
+  }, [
+    notifications,
+    morningTime,
+    afternoonTime,
+    eveningTime,
+    selectedLanguage,
+    selectedLevel,
+  ]);
 
   const checkNotificationPermission = async () => {
     const { status: existingStatus } =
@@ -45,8 +73,8 @@ export default function SettingsScreen() {
 
   const handleNotificationToggle = async (value: boolean) => {
     if (value) {
-      const { status } = await Notifications.requestPermissionsAsync();
-      if (status !== 'granted') {
+      const isSetup = await setupNotifications();
+      if (!isSetup) {
         Alert.alert(
           'Permission Required',
           'Please enable notifications in your device settings to receive daily word reminders.',
@@ -60,6 +88,32 @@ export default function SettingsScreen() {
 
   const handleLanguageSelect = (languageCode: string) => {
     setSelectedLanguage(languageCode);
+  };
+
+  const handleTestNotification = async () => {
+    if (!notifications) {
+      Alert.alert(
+        'Notifications Disabled',
+        'Please enable notifications first to send a test notification.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    try {
+      await sendTestNotification();
+      Alert.alert(
+        'Test Notification Sent',
+        'Check your device notifications to see the test message.',
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        'Failed to send test notification. Please check your notification permissions.',
+        [{ text: 'OK' }]
+      );
+    }
   };
 
   const levels: Level[] = [
@@ -86,7 +140,7 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Settings</Text>
+      {/* <Text style={styles.title}>Settings</Text> */}
 
       {/* Language Selection Section */}
       <View style={styles.section}>
@@ -159,8 +213,9 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      {/* Existing Notification Settings */}
+      {/* Notification Settings */}
       <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Notification Settings</Text>
         <View style={styles.settingRow}>
           <Text style={styles.settingText}>Enable Notifications</Text>
           <Switch
@@ -170,94 +225,83 @@ export default function SettingsScreen() {
             thumbColor={notifications ? '#fff' : '#f4f3f4'}
           />
         </View>
-      </View>
 
-      {/* <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Daily Word Frequency</Text>
-        <View style={styles.frequencyButtons}>
-          {[1, 3, 5, 7].map((num) => (
+        {notifications && (
+          <>
+            <Text style={styles.sectionSubtitle}>Notification Times</Text>
             <TouchableOpacity
-              key={num}
-              style={[
-                styles.frequencyButton,
-                frequency === num && styles.frequencyButtonActive,
-              ]}
-              onPress={() => setFrequency(num)}
+              style={styles.timeRow}
+              onPress={() => setMorningTime(!morningTime)}
             >
-              <Text
-                style={[
-                  styles.frequencyButtonText,
-                  frequency === num && styles.frequencyButtonTextActive,
-                ]}
-              >
-                {num}x
-              </Text>
+              <View style={styles.timeInfo}>
+                <Ionicons
+                  name="sunny"
+                  size={24}
+                  color={morningTime ? '#60a5fa' : '#666'}
+                />
+                <Text style={styles.timeText}>Morning (9:00 AM)</Text>
+              </View>
+              <Ionicons
+                name={
+                  morningTime ? 'checkmark-circle-outline' : 'ellipse-outline'
+                }
+                size={24}
+                color={morningTime ? '#60a5fa' : '#666'}
+              />
             </TouchableOpacity>
-          ))}
-        </View>
-      </View> */}
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Notification Times</Text>
-        <TouchableOpacity
-          style={styles.timeRow}
-          onPress={() => setMorningTime(!morningTime)}
-        >
-          <View style={styles.timeInfo}>
-            <Ionicons
-              name="sunny"
-              size={24}
-              color={morningTime ? '#60a5fa' : '#666'}
-            />
-            <Text style={styles.timeText}>Morning (9:00 AM)</Text>
-          </View>
-          <Ionicons
-            name={morningTime ? 'checkmark-circle-outline' : 'ellipse-outline'}
-            size={24}
-            color={morningTime ? '#60a5fa' : '#666'}
-          />
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.timeRow}
+              onPress={() => setAfternoonTime(!afternoonTime)}
+            >
+              <View style={styles.timeInfo}>
+                <Ionicons
+                  name="partly-sunny"
+                  size={24}
+                  color={afternoonTime ? '#60a5fa' : '#666'}
+                />
+                <Text style={styles.timeText}>Afternoon (2:00 PM)</Text>
+              </View>
+              <Ionicons
+                name={
+                  afternoonTime ? 'checkmark-circle-outline' : 'ellipse-outline'
+                }
+                size={24}
+                color={afternoonTime ? '#60a5fa' : '#666'}
+              />
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.timeRow}
-          onPress={() => setAfternoonTime(!afternoonTime)}
-        >
-          <View style={styles.timeInfo}>
-            <Ionicons
-              name="partly-sunny"
-              size={24}
-              color={afternoonTime ? '#60a5fa' : '#666'}
-            />
-            <Text style={styles.timeText}>Afternoon (2:00 PM)</Text>
-          </View>
-          <Ionicons
-            name={
-              afternoonTime ? 'checkmark-circle-outline' : 'ellipse-outline'
-            }
-            size={24}
-            color={afternoonTime ? '#60a5fa' : '#666'}
-          />
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.timeRow}
+              onPress={() => setEveningTime(!eveningTime)}
+            >
+              <View style={styles.timeInfo}>
+                <Ionicons
+                  name="moon"
+                  size={24}
+                  color={eveningTime ? '#60a5fa' : '#666'}
+                />
+                <Text style={styles.timeText}>Evening (8:00 PM)</Text>
+              </View>
+              <Ionicons
+                name={
+                  eveningTime ? 'checkmark-circle-outline' : 'ellipse-outline'
+                }
+                size={24}
+                color={eveningTime ? '#60a5fa' : '#666'}
+              />
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.timeRow}
-          onPress={() => setEveningTime(!eveningTime)}
-        >
-          <View style={styles.timeInfo}>
-            <Ionicons
-              name="moon"
-              size={24}
-              color={eveningTime ? '#60a5fa' : '#666'}
-            />
-            <Text style={styles.timeText}>Evening (8:00 PM)</Text>
-          </View>
-          <Ionicons
-            name={eveningTime ? 'checkmark-circle-outline' : 'ellipse-outline'}
-            size={24}
-            color={eveningTime ? '#60a5fa' : '#666'}
-          />
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.testButton}
+              onPress={handleTestNotification}
+            >
+              <Text style={styles.testButtonText}>Send Test Notification</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
+
       {/* Clear Recent Words From Storage */}
       <TouchableOpacity
         style={styles.clearButton}
@@ -294,6 +338,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 16,
+  },
+  sectionSubtitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#ddd',
+    marginTop: 16,
+    marginBottom: 8,
   },
   settingRow: {
     flexDirection: 'row',
@@ -412,6 +463,17 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   clearButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  testButton: {
+    backgroundColor: '#60a5fa',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  testButtonText: {
     color: '#fff',
     fontWeight: 'bold',
     textAlign: 'center',

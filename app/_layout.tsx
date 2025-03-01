@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import NotificationInitializer from '../components/NotificationInitializer';
 
 declare global {
   interface Window {
@@ -15,6 +16,7 @@ export default function RootLayout() {
 
   return (
     <>
+      <NotificationInitializer />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="+not-found" />
       </Stack>

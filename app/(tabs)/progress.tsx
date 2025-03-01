@@ -1,9 +1,62 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useWordHistoryStore } from '../../store/wordHistoryStore';
 import { useLanguageStore } from '../../store/languageStore';
 import { languages } from '../../constants/language-selection';
+
+// Helper function to get date string (YYYY-MM-DD) from timestamp
+const getDateString = (timestamp: number): string => {
+  const date = new Date(timestamp);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+    2,
+    '0'
+  )}-${String(date.getDate()).padStart(2, '0')}`;
+};
+
+// Calculate streak based on word timestamps
+const calculateStreak = (words: any[]): number => {
+  if (!words.length) return 0;
+
+  // Sort words by timestamp (newest first)
+  const sortedWords = [...words].sort((a, b) => b.timestamp - a.timestamp);
+
+  // Get unique dates when words were added
+  const uniqueDates = new Set<string>();
+  sortedWords.forEach((word) => {
+    uniqueDates.add(getDateString(word.timestamp));
+  });
+
+  // Convert to array and sort (newest first)
+  const dates = Array.from(uniqueDates).sort().reverse();
+
+  // Check if today or yesterday is in the dates
+  const today = getDateString(Date.now());
+  const yesterday = getDateString(Date.now() - 86400000); // 24 hours in milliseconds
+
+  // If neither today nor yesterday is in the dates, streak is 0
+  if (!dates.includes(today) && !dates.includes(yesterday)) {
+    return 0;
+  }
+
+  // Calculate streak by checking consecutive days
+  let streak = 1; // Start with 1 for today/yesterday
+  let currentDate = dates[0] === today ? today : yesterday;
+
+  for (let i = 1; i < dates.length; i++) {
+    const expectedPrevDate = getDateString(
+      new Date(currentDate).getTime() - 86400000
+    );
+    if (dates[i] === expectedPrevDate) {
+      streak++;
+      currentDate = expectedPrevDate;
+    } else {
+      break; // Streak broken
+    }
+  }
+
+  return streak;
+};
 
 export default function ProgressScreen() {
   const { selectedLanguage } = useLanguageStore();
@@ -16,11 +69,18 @@ export default function ProgressScreen() {
   }, [selectedLanguage]);
 
   const currentLanguageWords = recentWords[selectedLanguage] || [];
+
+  // Calculate streak based on word timestamps
+  const streak = useMemo(
+    () => calculateStreak(currentLanguageWords),
+    [currentLanguageWords]
+  );
+
   const stats = {
-    streak: 7, // This could be calculated based on daily learning activity
+    streak,
     wordsLearned: currentLanguageWords.length,
-    accuracy: 89, // This could be calculated based on quiz results
-    minutesSpent: 156, // This could be tracked based on app usage
+    // accuracy: 89, // This could be calculated based on quiz results
+    // minutesSpent: 156, // This could be tracked based on app usage
   };
 
   const selectedLangData = languages.find(
@@ -54,7 +114,7 @@ export default function ProgressScreen() {
               </LinearGradient>
             </View>
 
-            <View style={styles.statCard}>
+            {/* <View style={styles.statCard}>
               <LinearGradient
                 colors={['#f472b6', '#ec4899']}
                 style={styles.statGradient}
@@ -62,9 +122,9 @@ export default function ProgressScreen() {
                 <Text style={styles.statValue}>{stats.accuracy}%</Text>
                 <Text style={styles.statLabel}>Accuracy</Text>
               </LinearGradient>
-            </View>
+            </View> */}
 
-            <View style={styles.statCard}>
+            {/* <View style={styles.statCard}>
               <LinearGradient
                 colors={['#a78bfa', '#8b5cf6']}
                 style={styles.statGradient}
@@ -72,7 +132,7 @@ export default function ProgressScreen() {
                 <Text style={styles.statValue}>{stats.minutesSpent}</Text>
                 <Text style={styles.statLabel}>Minutes Spent</Text>
               </LinearGradient>
-            </View>
+            </View> */}
           </View>
 
           <View style={styles.section}>
