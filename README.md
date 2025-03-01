@@ -7,6 +7,7 @@ A mobile application designed to help users learn new words in different languag
 My Daily Word is a language learning application built with React Native and Expo. It helps users expand their vocabulary by providing a new word each day in their chosen language, complete with translations, pronunciations, and example sentences. The app tracks progress, maintains a history of learned words, and sends daily reminders to keep users engaged in their language learning journey.
 
 ## App Preview
+
 ![preview](https://github.com/fatihcaliss/my-daily-word/blob/main/trim.1A832B4B-23E9-429F-90F1-1F65BD457330.GIF?raw=true)
 
 ## Features
@@ -66,7 +67,8 @@ yarn install
    Create a `.env` file in the root directory with your Gemini API key:
 
 ```
-GEMINI_API_KEY=your_api_key_here
+EXPO_PUBLIC_GEMINI_API_KEY=your_api_key_here
+EXPO_PUBLIC_GEMINI_API_ENDPOINT=https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent
 ```
 
 4. Start the development server
