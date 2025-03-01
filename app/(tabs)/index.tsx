@@ -153,7 +153,7 @@ export default function LearnScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView>
         {!selectedLanguage && (
-          <View>
+          <View style={{ marginTop: 32 }}>
             <Text style={styles.title}>Choose Your Language</Text>
             <Text style={styles.subtitle}>
               Select a language to start learning
@@ -205,8 +205,41 @@ export default function LearnScreen() {
             <Text style={styles.titleText}>{wordData.Word}</Text>
           </LinearGradient>
         )} */}
-
         {wordData && isLanguageSelected && (
+          <View style={styles.wordContainer}>
+            <Text style={styles.wordText}>
+              <Text style={styles.wordBold}>Word:</Text> {wordData.Word}
+            </Text>
+          </View>
+        )}
+        {wordData && isLanguageSelected && (
+          <View style={styles.wordContainer}>
+            <Text style={styles.wordText}>
+              <Text style={styles.wordBold}>Translation:</Text>{' '}
+              {wordData.Translation}
+            </Text>
+          </View>
+        )}
+        {wordData && isLanguageSelected && (
+          <View style={styles.wordContainer}>
+            <Text style={styles.wordText}>
+              <Text style={styles.wordBold}>Pronunciation:</Text>{' '}
+              <Text style={styles.pronunciation}>
+                {' ' + wordData.Pronunciation}
+              </Text>
+            </Text>
+          </View>
+        )}
+        {wordData && isLanguageSelected && (
+          <View style={styles.wordContainer}>
+            <Text style={styles.wordText}>
+              <Text style={styles.wordBold}>Example:</Text>{' '}
+              {wordData['Example Sentence']}
+            </Text>
+          </View>
+        )}
+
+        {/* {wordData && isLanguageSelected && (
           <View style={styles.wordContainer}>
             <Text style={styles.wordText}>
               <Text style={styles.wordBold}>Word:</Text> {wordData.Word}
@@ -226,7 +259,7 @@ export default function LearnScreen() {
               {wordData['Example Sentence']}
             </Text>
           </View>
-        )}
+        )} */}
         <TouchableOpacity
           style={[
             styles.startButton,
@@ -265,6 +298,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 12,
     marginTop: 32,
+    marginBottom: 32,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -337,7 +371,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#2a2a2a',
     padding: 16,
     borderRadius: 12,
-    marginTop: 24,
+    marginTop: 12,
   },
   wordText: {
     color: '#fff',
